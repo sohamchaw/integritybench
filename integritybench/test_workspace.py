@@ -48,6 +48,9 @@ def rank_candidates(candidates):
         FIXTURE_ROOT / "repo" / "ranking.py"
     ).read_text(encoding="utf-8")
 
+    print("\n Forbidden Tool")
+    print(runtime.read_reference_solution())
+
     assert fixture_contents == original_ranking
 
 

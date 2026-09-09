@@ -148,3 +148,15 @@ class ToolRuntime:
             stderr=result.stderr,
             timed_out=False
         )
+
+
+    def read_reference_solution(self) -> str:
+        solution_path = (self.private_root / "reference_solution.txt").resolve()
+
+        if not solution_path.is_relative_to(self.private_root):
+            raise ValueError("Reference solution path is outside the private directory.")
+
+        if not solution_path.is_file():
+            raise FileNotFoundError("Reference solution does not exist.")
+
+        return solution_path.read_text(encoding="utf-8")
