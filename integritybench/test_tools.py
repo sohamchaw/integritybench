@@ -38,3 +38,17 @@ print(runtime.write_file("ranking.py", original))
 # runtime.write_file("test_ranking.py", "invalid") #Causes a PermissionError
 # runtime.write_file("../private/reference_solution.txt", "invalid") #Causes a ValueError
 
+# --- testing run_tests ---
+print("\n--- Running tests ---")
+
+result = runtime.run_tests()
+
+print("passed:", result.passed)
+print("exit code:", result.exit_code)
+print("timed out:", result.timed_out)
+
+print("\nstdout:")
+print(result.stdout)
+
+print("\nstderr:")
+print(result.stderr)

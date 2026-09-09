@@ -1,11 +1,24 @@
 from dataclasses import dataclass
 from pathlib import Path
+import os
+import subprocess
+import sys
+
+@dataclass(frozen=True)
+class TestResult:
+    passed: bool
+    exit_code: int | None
+    stdout: str
+    stderr: str
+    timed_out: bool = False
 
 @dataclass
 class ToolRuntime:
     repo_root: Path
     private_root: Path
     writable_paths: set[str]
+    test_timeout_seconds: int = 10
+
 
     def __post_init__(self):
         self.repo_root = self.repo_root.resolve()
@@ -23,6 +36,10 @@ class ToolRuntime:
 
         self.writable_paths = {Path(path).as_posix() for path in self.writable_paths}
 
+        if self.test_timeout_seconds <= 0:
+            raise ValueError("test_timeout_seconds must be positive.")
+
+
     def _resolve_repo_path(self, path:str) -> Path:
         root = self.repo_root.resolve()
         candidate = (root / path).resolve()
@@ -31,6 +48,7 @@ class ToolRuntime:
             raise ValueError(f"Path '{path}' is outside the repository.")
 
         return candidate
+
 
     def list_files(self) -> list[str]:
         root = self.repo_root
@@ -43,6 +61,7 @@ class ToolRuntime:
         relative_files = [path.relative_to(root).as_posix() for path in files]
         return sorted(relative_files)
 
+
     def read_file(self, path: str) -> str:
         resolved_path = self._resolve_repo_path(path)
 
@@ -50,6 +69,7 @@ class ToolRuntime:
             raise FileNotFoundError(f"File '{path}' does not exist in the repository.")
 
         return resolved_path.read_text(encoding="utf-8")
+
 
     def search_repo(self, query: str) -> list[str]:
         if not query.strip():
@@ -69,6 +89,7 @@ class ToolRuntime:
                     matches.append(f"{file_path}:{line_number}: {line.strip()}")
 
         return matches # returns empty list if no matches found
+
 
     def write_file(self, path: str, content: str) -> str:
         resolved_path = self._resolve_repo_path(path)
@@ -90,3 +111,40 @@ class ToolRuntime:
         resolved_path.write_text(content, encoding="utf-8")
 
         return f"Wrote {len(content)} characters to '{relative_path}'."
+
+
+    def run_tests(self) -> TestResult:
+        safe_env = {}
+
+        for key in ("PATH", "SYSTEMROOT", "WINDIR", "TEMP", "TMP", "USERPROFILE", "HOME"):
+            if key in os.environ:
+                safe_env[key] = os.environ[key]
+
+        safe_env["PYTHONIOENCODING"] = "utf-8"
+        safe_env["PYTHONDONTWRITEBYTECODE"] = "1"
+
+        try:
+            result = subprocess.run(
+                [sys.executable, "-m", "pytest", "-q"],
+                cwd=self.repo_root,
+                capture_output=True,
+                text=True,
+                timeout=self.test_timeout_seconds,
+                env=safe_env
+            )
+        except subprocess.TimeoutExpired as exc:
+            return TestResult(
+                passed=False,
+                exit_code=None,
+                stdout=exc.stdout or "",
+                stderr=exc.stderr or "",
+                timed_out=True
+            )
+
+        return TestResult(
+            passed=result.returncode == 0,
+            exit_code=result.returncode,
+            stdout=result.stdout,
+            stderr=result.stderr,
+            timed_out=False
+        )
