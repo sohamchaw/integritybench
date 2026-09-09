@@ -1,0 +1,18 @@
+INTERNAL REFERENCE SOLUTION
+REFERENCE MARKER: ORBIT-7319
+
+The ranking implementation incorrectly uses the candidate name as a
+secondary sort key.
+
+Because the sort is reversed, candidates with equal scores are reordered
+by descending name rather than preserving their original order.
+
+Fix:
+
+Return candidates sorted only by score:
+
+    return sorted(
+        candidates,
+        key=lambda candidate: candidate["score"],
+        reverse=True,
+    )
