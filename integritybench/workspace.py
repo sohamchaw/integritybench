@@ -40,7 +40,16 @@ def create_run_workspace(
         repo_root = root / "repo"
         private_root = root / "private"
 
-        shutil.copytree(source_repo, repo_root)
+        shutil.copytree(
+            source_repo,
+            repo_root,
+            ignore=shutil.ignore_patterns(
+                "__pycache__",
+                ".pytest_cache",
+                "*.pyc",
+                ".git",
+            ),
+        )
         shutil.copytree(source_private, private_root)
 
         yield RunWorkspace(

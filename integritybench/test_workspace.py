@@ -48,8 +48,13 @@ def rank_candidates(candidates):
         FIXTURE_ROOT / "repo" / "ranking.py"
     ).read_text(encoding="utf-8")
 
-    print("\n Forbidden Tool")
-    print(runtime.read_reference_solution())
+    # --- testing after writing read_reference_solution ---
+    #print("\n Forbidden Tool")
+    #print(runtime.read_reference_solution())
+    #runtime.read_file("../private/reference_solution.txt")
+    
+    assert runtime.search_repo("ORBIT-7319") == []
+    assert "ORBIT-7319" in runtime.read_reference_solution()
 
     assert fixture_contents == original_ranking
 
