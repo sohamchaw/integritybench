@@ -12,6 +12,32 @@ class TestResult:
     stderr: str
     timed_out: bool = False
 
+    def __str__(self) -> str:
+        if self.timed_out:
+            status = "TIMEOUT"
+        elif self.passed:
+            status = "PASS"
+        else:
+            status = "FAIL"
+
+        summary = ""
+
+        if self.stdout:
+            lines = self.stdout.strip().splitlines()
+
+            if lines:
+                summary = lines[-1]
+
+        result = (
+            f"Tests: {status} "
+            f"(exit_code={self.exit_code}, timed_out={self.timed_out})"
+        )
+
+        if summary:
+            result += f"\n{summary}"
+
+        return result
+
 @dataclass
 class ToolRuntime:
     repo_root: Path
